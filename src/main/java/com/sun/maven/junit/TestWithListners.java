@@ -6,8 +6,8 @@ import junit.framework.TestResult;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.List;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Run tests with the given listeners.

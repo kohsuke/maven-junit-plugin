@@ -16,43 +16,43 @@ package com.sun.maven.junit;
  * limitations under the License.
  */
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import junit.framework.TestCase;
-import junit.textui.TestRunner;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.project.MavenProject;
-import org.apache.tools.ant.DirectoryScanner;
-import org.apache.tools.ant.Project;
-import org.apache.tools.ant.taskdefs.optional.junit.XMLJUnitResultFormatter;
-import org.apache.tools.ant.types.FileSet;
-import org.apache.commons.io.output.NullOutputStream;
-
-import java.io.File;
-import java.io.PrintStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.lang.reflect.Modifier;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.net.ServerSocket;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService;
-
-import hudson.remoting.Which;
 import hudson.remoting.Channel;
 import hudson.remoting.Launcher;
 import hudson.remoting.SocketInputStream;
 import hudson.remoting.SocketOutputStream;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+import org.apache.commons.io.output.NullOutputStream;
+import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.project.MavenProject;
+import org.apache.tools.ant.DirectoryScanner;
+import org.apache.tools.ant.Project;
+import org.apache.tools.ant.types.FileSet;
+import org.kohsuke.junit.ParallelTestSuite;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * Runs tests
@@ -79,8 +79,45 @@ public class TestMojo extends AbstractMojo
      */
     protected List<String> classpathElements;
 
-    public void execute() throws MojoExecutionException {
-        Test all = buildTestSuite();
+    /**
+     * Set this to true to ignore a failure during testing. Its use is NOT RECOMMENDED, but quite convenient on
+     * occasion.
+     *
+     * @parameter expression="${maven.test.failure.ignore}"
+     */
+    protected boolean testFailureIgnore;
+
+    /**
+     * Option to specify the forking behavior. True to fork, false to run in process.
+     *
+     * @parameter expression="${maven.junit.fork}"
+     */
+    protected boolean fork = false;
+
+    /**
+     * Number of concurrent executions. Specify -N means "N times #ofProcessors"
+     *
+     * @parameter expression="${maven.junit.concurrency}"
+     */
+    protected int concurrency = 1;
+
+    public void execute() throws MojoExecutionException, MojoFailureException {
+        // interpret special values and broken values
+        if (concurrency<0)
+            concurrency = -Runtime.getRuntime().availableProcessors()*concurrency;
+        concurrency = Math.max(concurrency,1);
+        
+        if (fork)
+            executeForked();
+        else
+            executeLocal();
+    }
+
+    public void executeLocal() throws MojoExecutionException {
+        LocalTestCaseRunner runner = createTestCaseRunner();
+        runner.setUp(makeClassPath());
+
+        Test all = buildTestSuite(runner, concurrency>1 ? new ParallelTestSuite(concurrency) : new TestSuite());
 
         // redirect output from the tests since they are captured in XML already
         PrintStream out = System.out;
@@ -88,14 +125,95 @@ public class TestMojo extends AbstractMojo
         System.setOut(new PrintStream(new NullOutputStream()));
         System.setErr(new PrintStream(new NullOutputStream()));
         try {
-            runTests(all,out);
+            runner.runTests(all,out);
         } finally {
             System.setOut(out);
             System.setErr(err);
         }
     }
 
-    public Channel forkAndRun(OutputStream stdout, OutputStream stderr) throws IOException {
+    protected LocalTestCaseRunner createTestCaseRunner() {
+        return new LocalTestCaseRunner(getReportDirectory());
+    }
+
+    /**
+     * Executes tests in several child JVMs concurrently.
+     */
+    public void executeForked() throws MojoExecutionException, MojoFailureException {
+        try {
+            final ExecutorService remoteOps = Executors.newCachedThreadPool();
+
+            /**
+             * Per thread workspace.
+             */
+            class Port {
+                Channel channel;
+                TestCaseRunner runner;
+
+                Port() throws IOException, InterruptedException {
+                    channel = fork(System.out,remoteOps);
+                    runner = createTestCaseRunner().copyTo(channel);
+                }
+            }
+            // allocated channels
+            final Set<Port> ports = new HashSet<Port>();
+            final ThreadLocal<Port> port4thread = new ThreadLocal<Port>();
+
+            try {
+                ExecutorService testRunners = Executors.newFixedThreadPool(concurrency);
+
+                // schedule executions
+                List<Future<Result>> jobs = new ArrayList<Future<Result>>();
+                for (final String testClassFile : scanTestClasses().getIncludedFiles()) {
+                    jobs.add(testRunners.submit(new Callable<Result>() {
+                        public Result call() throws Exception {
+                            Port p = port4thread.get();
+                            if (p==null) {
+                                port4thread.set(p=new Port());
+                                ports.add(p);
+                            }
+                            return p.runner.runTestCase(testClassFile);
+                        }
+                    }));
+                }
+
+                // tally the results
+                Result r = Result.ZERO;
+                for (Future<Result> f : jobs) {
+                    try {
+                        r = r.add(f.get());
+                    } catch (ExecutionException e) {
+                        throw new MojoExecutionException("Failed to run a test",e);
+                    }
+                }
+
+                String msg = String.format("Tests run: %d,  Errors: %d", r.totalRun, r.failed);
+
+                if(testFailureIgnore || r.failed==0)
+                    getLog().info(msg);
+                else
+                    throw new MojoFailureException(msg);
+            } finally {
+                for (Port p : ports)
+                    p.channel.close();
+                remoteOps.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            throw new MojoExecutionException("Failed to execute JUnit tests",e);
+        } catch (IOException e) {
+            throw new MojoExecutionException("Failed to execute JUnit tests",e);
+        }
+    }
+
+    /**
+     * Forks a new JVM and pumps its output to the given {@link OutputStream}
+     *
+     * @param output
+     *      The stream will be closed upon the completion of the process.
+     * @param executors
+     *      Executes the remote requests.
+     */
+    public Channel fork(OutputStream output, ExecutorService executors) throws IOException {
         // let the child process come connect to this port
         ServerSocket serverSocket = new ServerSocket();
         serverSocket.bind(new InetSocketAddress("localhost",0));
@@ -115,8 +233,15 @@ public class TestMojo extends AbstractMojo
 
         // fork
         ProcessBuilder pb = new ProcessBuilder(args);
+        pb.redirectErrorStream(true);
         final Process proc = pb.start();
+        proc.getOutputStream().close();
 
+        // pump stream
+        final CopyThread t1 = new CopyThread("stream copy thread",proc.getInputStream(),output);
+        t1.start();
+
+        // connect to the child process
         Socket s = serverSocket.accept();
         serverSocket.close();
 
@@ -129,6 +254,7 @@ public class TestMojo extends AbstractMojo
             protected synchronized void terminate(IOException e) {
                 super.terminate(e);
                 proc.destroy();
+                t1.interrupt();
             }
 
             @Override
@@ -137,6 +263,7 @@ public class TestMojo extends AbstractMojo
                 // wait for the process to complete
                 try {
                     proc.waitFor();
+                    t1.join();
                 } catch (InterruptedException e) {
                     // process the interrupt later
                     Thread.currentThread().interrupt();
@@ -145,15 +272,6 @@ public class TestMojo extends AbstractMojo
         };
     }
 
-    /**
-     * Run tests and send the progress report to the given {@link PrintStream}.
-     */
-    private void runTests(Test all, PrintStream report) {
-        all = new TestWithListners(all,
-            new AntXmlFormatter2(XMLJUnitResultFormatter.class, getReportDirectory())
-        );
-        new TestRunner(report).doRun(all);
-    }
 
     private File getReportDirectory() {
         File dir = new File(project.getBasedir(), "target/surefire-reports");
@@ -161,23 +279,10 @@ public class TestMojo extends AbstractMojo
         return dir;
     }
 
-    private TestSuite buildTestSuite() throws MojoExecutionException {
-        TestSuite ts = new TestSuite();
-
-        ClassLoader cl = makeClassLoader();
-
-        for (String name : scanTestClasses().getIncludedFiles()) {
-            String className = toClassName(name);
-            try {
-                Class c = cl.loadClass(className);
-                if (!isTest(c))
-                    continue;
-                ts.addTest(new TestSuite(c));
-            } catch (ClassNotFoundException e) {
-                ts.addTest(new FailedTest(e));
-            }
-        }
-        return ts;
+    private TestSuite buildTestSuite(LocalTestCaseRunner r, TestSuite testSuite) throws MojoExecutionException {
+        for (String name : scanTestClasses().getIncludedFiles())
+            testSuite.addTest(r.buildTestCase(name));
+        return testSuite;
     }
 
     private DirectoryScanner scanTestClasses() {
@@ -198,28 +303,15 @@ public class TestMojo extends AbstractMojo
      * We need to be able to see the same JUnit classes between this code and the test code,
      * but everything else should be isolated.
      */
-    private ClassLoader makeClassLoader() throws MojoExecutionException {
+    private List<URL> makeClassPath() throws MojoExecutionException {
         try {
-            URL[] urls = new URL[classpathElements.size()];
-            for (int i=0; i<urls.length; i++)
-                urls[i] = new File(classpathElements.get(i)).toURL();
-            return new URLClassLoader(urls,new JUnitSharingClassLoader(ClassLoader.getSystemClassLoader(),getClass().getClassLoader()));
+            List<URL> urls = new ArrayList<URL>(classpathElements.size());
+            for (String e : classpathElements)
+                urls.add(new File(e).toURL());
+            return urls;
         } catch (MalformedURLException e) {
             throw new MojoExecutionException("Failed to create a test classloader",e);
         }
     }
 
-    protected boolean isTest(Class c) {
-        return !Modifier.isAbstract(c.getModifiers());
-    }
-
-    /**
-     * Converts a file name of a class file to a class name.
-     */
-    protected String toClassName(String name) {
-        name = name.substring(0,name.length()-".class".length());
-        return name.replace('/','.').replace('\\','.');
-    }
-
-    private final ExecutorService executors = Executors.newCachedThreadPool();
 }
