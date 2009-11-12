@@ -24,4 +24,11 @@ public interface TestCaseRunner {
      *      File name of the test case class, relative to the class directory root.
      */
     Result runTestCase(String fileName);
+
+    /**
+     * Redirects the stdout/stderr to /dev/null.
+     *
+     * This method doesn't actually belong here but it's convenient to do this.
+     */
+    void redirectToDevNull();
 }

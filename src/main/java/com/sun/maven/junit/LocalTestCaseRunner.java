@@ -5,6 +5,7 @@ import junit.framework.TestResult;
 import junit.framework.TestSuite;
 import junit.textui.TestRunner;
 import org.apache.tools.ant.taskdefs.optional.junit.XMLJUnitResultFormatter;
+import org.apache.commons.io.output.NullOutputStream;
 
 import java.io.File;
 import java.io.PrintStream;
@@ -34,16 +35,24 @@ public class LocalTestCaseRunner implements TestCaseRunner, Serializable {
      */
     private transient ClassLoader cl;
 
+    private transient PrintStream progress;
+
     public LocalTestCaseRunner(File reportDirectory) {
         this.reportDirectory = reportDirectory;
     }
 
     public void setUp(List<URL> classpath) {
         cl = new URLClassLoader(classpath.toArray(new URL[classpath.size()]),new JUnitSharingClassLoader(ClassLoader.getSystemClassLoader(),getClass().getClassLoader()));
+        progress = System.out;
     }
 
     public Result runTestCase(String fileName) {
-        return Result.from(runTests(buildTestCase(fileName),System.out));
+        return Result.from(runTests(buildTestCase(fileName),progress));
+    }
+
+    public void redirectToDevNull() {
+        System.setOut(new PrintStream(new NullOutputStream()));
+        System.setErr(new PrintStream(new NullOutputStream()));
     }
 
     public Test buildTestCase(String fileName) {

@@ -159,6 +159,7 @@ public class TestMojo extends AbstractMojo
                     channel = fork(System.out,remoteOps);
                     runner = createTestCaseRunner().copyTo(channel);
                     runner.setUp(makeClassPath());
+                    runner.redirectToDevNull();
                 }
             }
             // allocated channels
