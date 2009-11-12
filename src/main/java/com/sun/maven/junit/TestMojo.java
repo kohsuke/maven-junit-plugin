@@ -125,6 +125,15 @@ public class TestMojo extends AbstractMojo
      */
     protected String test = "*Test";
 
+    /**
+     * If true, the stdout/stderr from tests will not be copied to the console. (Note that they are
+     * always in the test result XML file, regardless of the value of this option.)
+     *
+     * @parameter expression="${maven.junit.quiet}" default-value="true"
+     * @since 2.3
+     */
+    protected boolean quiet;
+
     public void execute() throws MojoExecutionException, MojoFailureException {
         normalizeParameters();
 
@@ -156,8 +165,10 @@ public class TestMojo extends AbstractMojo
             // redirect output from the tests since they are captured in XML already
             PrintStream out = System.out;
             PrintStream err = System.err;
-            System.setOut(new PrintStream(new NullOutputStream()));
-            System.setErr(new PrintStream(new NullOutputStream()));
+            if (quiet) {
+                System.setOut(new PrintStream(new NullOutputStream()));
+                System.setErr(new PrintStream(new NullOutputStream()));
+            }
             try {
                 runner.runTests(all,out);
             } finally {
@@ -191,7 +202,7 @@ public class TestMojo extends AbstractMojo
                     channel = fork(System.out,remoteOps);
                     runner = createTestCaseRunner().copyTo(channel);
                     runner.setUp(makeClassPath());
-                    runner.redirectToDevNull();
+                    if (quiet)      runner.redirectToDevNull();
                 }
             }
             // allocated channels
@@ -260,7 +271,6 @@ public class TestMojo extends AbstractMojo
         // let the child process come connect to this port
         ServerSocket serverSocket = new ServerSocket();
         serverSocket.bind(new InetSocketAddress("localhost",0));
-        serverSocket.setSoTimeout(10*1000);
         int port = serverSocket.getLocalPort();
 
         List<String> args = new ArrayList<String>();
