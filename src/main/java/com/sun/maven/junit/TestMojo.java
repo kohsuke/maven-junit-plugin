@@ -48,6 +48,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Collections;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -114,21 +115,25 @@ public class TestMojo extends AbstractMojo
     }
 
     public void executeLocal() throws MojoExecutionException {
-        LocalTestCaseRunner runner = createTestCaseRunner();
-        runner.setUp(makeClassPath());
-
-        Test all = buildTestSuite(runner, concurrency>1 ? new ParallelTestSuite(concurrency) : new TestSuite());
-
-        // redirect output from the tests since they are captured in XML already
-        PrintStream out = System.out;
-        PrintStream err = System.err;
-        System.setOut(new PrintStream(new NullOutputStream()));
-        System.setErr(new PrintStream(new NullOutputStream()));
         try {
-            runner.runTests(all,out);
-        } finally {
-            System.setOut(out);
-            System.setErr(err);
+            LocalTestCaseRunner runner = createTestCaseRunner();
+            runner.setUp(makeClassPath());
+
+            Test all = buildTestSuite(runner, concurrency>1 ? new ParallelTestSuite(concurrency) : new TestSuite());
+
+            // redirect output from the tests since they are captured in XML already
+            PrintStream out = System.out;
+            PrintStream err = System.err;
+            System.setOut(new PrintStream(new NullOutputStream()));
+            System.setErr(new PrintStream(new NullOutputStream()));
+            try {
+                runner.runTests(all,out);
+            } finally {
+                System.setOut(out);
+                System.setErr(err);
+            }
+        } catch (MalformedURLException e) {
+            throw new MojoExecutionException("Failed to execute JUnit tests",e);
         }
     }
 
@@ -153,10 +158,11 @@ public class TestMojo extends AbstractMojo
                 Port() throws IOException, InterruptedException {
                     channel = fork(System.out,remoteOps);
                     runner = createTestCaseRunner().copyTo(channel);
+                    runner.setUp(makeClassPath());
                 }
             }
             // allocated channels
-            final Set<Port> ports = new HashSet<Port>();
+            final Set<Port> ports = Collections.synchronizedSet(new HashSet<Port>());
             final ThreadLocal<Port> port4thread = new ThreadLocal<Port>();
 
             try {
@@ -183,6 +189,7 @@ public class TestMojo extends AbstractMojo
                     try {
                         r = r.add(f.get());
                     } catch (ExecutionException e) {
+                        e.printStackTrace();
                         throw new MojoExecutionException("Failed to run a test",e);
                     }
                 }
@@ -194,13 +201,16 @@ public class TestMojo extends AbstractMojo
                 else
                     throw new MojoFailureException(msg);
             } finally {
-                for (Port p : ports)
-                    p.channel.close();
-                remoteOps.shutdownNow();
+                try {
+                    for (Port p : ports)
+                        p.channel.close();
+                    remoteOps.shutdownNow();
+                } catch (IOException e) {
+                    // if this fails, we want the root cause to be displayed, not the close failure
+                    e.printStackTrace();
+                }
             }
         } catch (InterruptedException e) {
-            throw new MojoExecutionException("Failed to execute JUnit tests",e);
-        } catch (IOException e) {
             throw new MojoExecutionException("Failed to execute JUnit tests",e);
         }
     }
@@ -303,15 +313,11 @@ public class TestMojo extends AbstractMojo
      * We need to be able to see the same JUnit classes between this code and the test code,
      * but everything else should be isolated.
      */
-    private List<URL> makeClassPath() throws MojoExecutionException {
-        try {
-            List<URL> urls = new ArrayList<URL>(classpathElements.size());
-            for (String e : classpathElements)
-                urls.add(new File(e).toURL());
-            return urls;
-        } catch (MalformedURLException e) {
-            throw new MojoExecutionException("Failed to create a test classloader",e);
-        }
+    private List<URL> makeClassPath() throws MalformedURLException {
+        List<URL> urls = new ArrayList<URL>(classpathElements.size());
+        for (String e : classpathElements)
+            urls.add(new File(e).toURL());
+        return urls;
     }
 
 }
