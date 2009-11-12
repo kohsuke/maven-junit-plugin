@@ -16,6 +16,8 @@ package org.kohsuke.maven.junit;
  * limitations under the License.
  */
 
+import com.sun.istack.test.AntXmlFormatter;
+import junit.framework.Test;
 import junit.framework.TestSuite;
 import junit.textui.TestRunner;
 import org.apache.maven.plugin.AbstractMojo;
@@ -23,6 +25,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;
+import org.apache.tools.ant.taskdefs.optional.junit.XMLJUnitResultFormatter;
 import org.apache.tools.ant.types.FileSet;
 
 import java.io.File;
@@ -43,7 +46,7 @@ import java.util.List;
 public class TestMojo extends AbstractMojo
 {
     /**
-     * @component
+     * @parameter expression="${project}"
      * @required
      */
     protected MavenProject project;
@@ -58,8 +61,17 @@ public class TestMojo extends AbstractMojo
     protected List<String> classpathElements;
 
     public void execute() throws MojoExecutionException {
-        TestSuite ts = buildTestSuite();
-        TestRunner.run(ts);
+        Test all = buildTestSuite();
+        all = new TestWithListners(all,
+            new AntXmlFormatter(XMLJUnitResultFormatter.class, getReportDirectory())
+        );
+        TestRunner.run(all);
+    }
+
+    private File getReportDirectory() {
+        File dir = new File(project.getBasedir(), "target/surefire-reports");
+        dir.mkdirs();
+        return dir;
     }
 
     private TestSuite buildTestSuite() throws MojoExecutionException {
@@ -94,13 +106,17 @@ public class TestMojo extends AbstractMojo
 
     /**
      * Creates a classloader for loading tests.
+     *
+     * <p>
+     * We need to be able to see the same JUnit classes between this code and the test code,
+     * but everything else should be isolated.
      */
     private ClassLoader makeClassLoader() throws MojoExecutionException {
         try {
             URL[] urls = new URL[classpathElements.size()];
             for (int i=0; i<urls.length; i++)
                 urls[i] = new File(classpathElements.get(i)).toURL();
-            return new URLClassLoader(urls);
+            return new URLClassLoader(urls,new JUnitSharingClassLoader(ClassLoader.getSystemClassLoader(),getClass().getClassLoader()));
         } catch (MalformedURLException e) {
             throw new MojoExecutionException("Failed to create a test classloader",e);
         }
