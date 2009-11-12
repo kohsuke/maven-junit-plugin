@@ -12,6 +12,8 @@ import java.io.PrintStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.List;
@@ -61,6 +63,22 @@ public class LocalTestCaseRunner implements TestCaseRunner, Serializable {
             Class c = cl.loadClass(className);
             if (!isTest(c))
                 return EMPTY;
+
+            try {
+                // look for the static suite method. I thought JUnit already does this but I guess it doesn't.
+                Method m = c.getDeclaredMethod("suite");
+                if (Modifier.isStatic(m.getModifiers())) {
+                    try {
+                        return (Test)m.invoke(null);
+                    } catch (IllegalAccessException e) {
+                        return new FailedTest(e);
+                    } catch (InvocationTargetException e) {
+                        return new FailedTest(e);
+                    }
+                }
+            } catch (NoSuchMethodException e) {
+                // fall through
+            }
             return new TestSuite(c);
         } catch (ClassNotFoundException e) {
             return new FailedTest(e);

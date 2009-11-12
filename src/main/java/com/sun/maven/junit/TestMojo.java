@@ -229,6 +229,7 @@ public class TestMojo extends AbstractMojo
         ServerSocket serverSocket = new ServerSocket();
         serverSocket.bind(new InetSocketAddress("localhost",0));
         serverSocket.setSoTimeout(10*1000);
+        int port = serverSocket.getLocalPort();
 
         List<String> args = new ArrayList<String>();
         args.add(new File(System.getProperty("java.home"),"bin/java").getAbsolutePath());
@@ -240,7 +241,7 @@ public class TestMojo extends AbstractMojo
         args.add(cb.toString());
         args.add(Launcher.class.getName());
         args.add("-connectTo");
-        args.add("localhost:"+serverSocket.getLocalPort());
+        args.add("localhost:"+ port);
 
         // fork
         ProcessBuilder pb = new ProcessBuilder(args);
@@ -256,7 +257,7 @@ public class TestMojo extends AbstractMojo
         Socket s = serverSocket.accept();
         serverSocket.close();
 
-        return new Channel("Channel to child process", executors,
+        return new Channel("Channel to child process port:"+port, executors,
                 new BufferedInputStream(new SocketInputStream(s)), new BufferedOutputStream(new SocketOutputStream(s))) {
             /**
              * Kill the process when the channel is severed.
