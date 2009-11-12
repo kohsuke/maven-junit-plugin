@@ -9,6 +9,7 @@ import org.apache.tools.ant.taskdefs.optional.junit.XMLJUnitResultFormatter;
 import java.io.File;
 import java.io.PrintStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -20,9 +21,12 @@ import hudson.remoting.Callable;
 /**
  * {@link TestCaseRunner} that runs tests on the current JVM.
  *
+ * <p>
+ * This object can be also sent to a remote channel to execute tests over there.
+ * 
  * @author Kohsuke Kawaguchi
  */
-public class LocalTestCaseRunner implements TestCaseRunner {
+public class LocalTestCaseRunner implements TestCaseRunner, Serializable {
     private final File reportDirectory;
 
     /**
@@ -91,4 +95,6 @@ public class LocalTestCaseRunner implements TestCaseRunner {
      * No tests.
      */
     private static final Test EMPTY = new TestSuite();
+
+    private static final long serialVersionUID = 1L;
 }
