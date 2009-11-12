@@ -49,6 +49,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Collections;
+import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -102,16 +103,47 @@ public class TestMojo extends AbstractMojo
      */
     protected int concurrency = 1;
 
+    /**
+     * Attach a debugger to the forked JVM.  If set to "true", the process will suspend and
+     * wait for a debugger to attach on port 5005.  If set to some other string, that
+     * string will be appended to the argLine, allowing you to configure arbitrary
+     * debuggability options (without overwriting the other options specified in the argLine).
+     *
+     * @parameter expression="${maven.surefire.debug}"
+     * @since 2.4
+     */
+    protected String debugForkedProcess;
+
+    /**
+     * Specify this parameter to run individual tests by file name, overriding the <code>includes/excludes</code>
+     * parameters.  Each pattern you specify here will be used to create an
+     * include pattern formatted like <code>**&#47;${test}.java</code>, so you can just type "-Dtest=MyTest"
+     * to run a single test called "foo/MyTest.java".  This parameter will override the TestNG suiteXmlFiles
+     * parameter.
+     *
+     * @parameter expression="${test}"
+     */
+    protected String test = "*Test";
+
     public void execute() throws MojoExecutionException, MojoFailureException {
-        // interpret special values and broken values
-        if (concurrency<0)
-            concurrency = -Runtime.getRuntime().availableProcessors()*concurrency;
-        concurrency = Math.max(concurrency,1);
-        
+        normalizeParameters();
+
         if (fork)
             executeForked();
         else
             executeLocal();
+    }
+
+    /**
+     * interpret special values and broken values
+     */
+    private void normalizeParameters() {
+        if (concurrency<0)
+            concurrency = -Runtime.getRuntime().availableProcessors()*concurrency;
+        concurrency = Math.max(concurrency,1);
+
+        if ( "true".equals( debugForkedProcess ) )
+            debugForkedProcess = "-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5005";
     }
 
     public void executeLocal() throws MojoExecutionException {
@@ -237,6 +269,11 @@ public class TestMojo extends AbstractMojo
         ClasspathBuilder cb = new ClasspathBuilder();
         cb.addJarOf(Channel.class).addJarOf(TestCase.class);
 
+        if (debugForkedProcess!=null) {
+            StringTokenizer tokens = new StringTokenizer(debugForkedProcess);
+            while (tokens.hasMoreTokens())
+                args.add(tokens.nextToken());
+        }
         args.add("-cp");
         args.add(cb.toString());
         args.add(Launcher.class.getName());
@@ -300,7 +337,7 @@ public class TestMojo extends AbstractMojo
     private DirectoryScanner scanTestClasses() {
         FileSet fs = new FileSet();
         fs.setDir(getTestOutputDirectory());
-        fs.setIncludes("**/*Test.class");
+        fs.setIncludes("**/"+test.replace('.','/')+".class");
         return fs.getDirectoryScanner(new Project());
     }
 
