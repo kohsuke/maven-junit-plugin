@@ -5,40 +5,57 @@ import junit.framework.Test;
 import junit.framework.TestListener;
 
 import java.io.PrintStream;
+import java.io.Serializable;
+import java.io.Closeable;
+import java.io.IOException;
+
+import hudson.remoting.Channel;
 
 /**
  * Prints a progress report in one letter per test.
  *
  * @author Kohsuke Kawaguchi
  */
-public class ProgressReporter implements TestListener {
+public class ProgressReporter implements ProgressListener, Serializable, Closeable {
     private final PrintStream report;
-    private int width;
 
     public ProgressReporter(PrintStream report) {
         this.report = report;
     }
 
-    public void addError(Test test, Throwable t) {
-        letter('E');
+    public synchronized void onStart(String testName) {
+        print("Running "+testName);
     }
 
-    public void addFailure(Test test, AssertionFailedError t) {
-        letter('F');
+    public void onEnd(String testName) {
     }
 
-    public void endTest(Test test) {
+    public synchronized void onError(String testName, Throwable cause) {
+        print("");
+        report.println("Test failure: "+testName);
+        cause.printStackTrace(report);
     }
 
-    public void startTest(Test test) {
-        letter('.');
+    public void close() {
+        report.println();
     }
 
-    private synchronized void letter(char ch) {
-        report.print(ch);
-        if (width++ > 72) {
-            report.println();
-            width= 0;
+    private void print(String msg) {
+        report.print(msg);
+
+        // for non-ASCII chars, this is a better approximation of the line length than String.length()
+        for (int i=msg.getBytes().length; i<72; i++) {
+            report.print(' ');
         }
+        report.print('\r');
     }
+
+    /**
+     * Send a proxy.
+     */
+    private Object writeReplace() {
+        return Channel.current().export(ProgressListener.class,this);
+    }
+
+    private static final long serialVersionUID = 1L;
 }
