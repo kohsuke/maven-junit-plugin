@@ -27,8 +27,10 @@ import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.optional.junit.XMLJUnitResultFormatter;
 import org.apache.tools.ant.types.FileSet;
+import org.apache.commons.io.output.NullOutputStream;
 
 import java.io.File;
+import java.io.PrintStream;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -62,10 +64,28 @@ public class TestMojo extends AbstractMojo
 
     public void execute() throws MojoExecutionException {
         Test all = buildTestSuite();
+
+        // redirect output from the tests since they are captured in XML already
+        PrintStream out = System.out;
+        PrintStream err = System.err;
+        System.setOut(new PrintStream(new NullOutputStream()));
+        System.setErr(new PrintStream(new NullOutputStream()));
+        try {
+            runTests(all,out);
+        } finally {
+            System.setOut(out);
+            System.setErr(err);
+        }
+    }
+
+    /**
+     * Run tests and send the progress report to the given {@link PrintStream}.
+     */
+    private void runTests(Test all, PrintStream report) {
         all = new TestWithListners(all,
             new AntXmlFormatter(XMLJUnitResultFormatter.class, getReportDirectory())
         );
-        TestRunner.run(all);
+        new TestRunner(report).doRun(all);
     }
 
     private File getReportDirectory() {
