@@ -1,25 +1,23 @@
 package com.sun.maven.junit;
 
+import hudson.remoting.Callable;
+import hudson.remoting.Channel;
 import junit.framework.Test;
 import junit.framework.TestResult;
 import junit.framework.TestSuite;
-import junit.textui.TestRunner;
-import org.apache.tools.ant.taskdefs.optional.junit.XMLJUnitResultFormatter;
 import org.apache.commons.io.output.NullOutputStream;
+import org.apache.tools.ant.taskdefs.optional.junit.XMLJUnitResultFormatter;
 
 import java.io.File;
-import java.io.PrintStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.Serializable;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.List;
-
-import hudson.remoting.Channel;
-import hudson.remoting.Callable;
 
 /**
  * {@link TestCaseRunner} that runs tests on the current JVM.
@@ -89,17 +87,22 @@ public class LocalTestCaseRunner implements TestCaseRunner, Serializable {
      * Run tests and send the progress report to the given {@link PrintStream}.
      */
     public TestResult runTests(Test all, PrintStream report) {
-        all = new TestWithListners(all,
-            new AntXmlFormatter(XMLJUnitResultFormatter.class, reportDirectory)
-        );
+        TestResult tr = new TestResult();
+        AntXmlFormatter formatter = new AntXmlFormatter(XMLJUnitResultFormatter.class, reportDirectory);
+        tr.addListener(formatter);
+        tr.addListener(new ProgressReporter(report));
+
         Thread t = Thread.currentThread();
         ClassLoader old = t.getContextClassLoader();
         t.setContextClassLoader(cl);
         try {
-            return new TestRunner(report).doRun(all);
+            all.run(tr);
         } finally {
             t.setContextClassLoader(old);
+            formatter.close();
         }
+
+        return tr;
     }
 
     protected boolean isTest(Class c) {

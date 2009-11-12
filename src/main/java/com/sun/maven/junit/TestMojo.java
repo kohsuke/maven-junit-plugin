@@ -22,7 +22,9 @@ import hudson.remoting.SocketInputStream;
 import hudson.remoting.SocketOutputStream;
 import junit.framework.Test;
 import junit.framework.TestCase;
+import junit.framework.TestResult;
 import junit.framework.TestSuite;
+import junit.textui.ResultPrinter;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -39,16 +41,18 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.Collections;
 import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -170,7 +174,9 @@ public class TestMojo extends AbstractMojo
                 System.setErr(new PrintStream(new NullOutputStream()));
             }
             try {
-                runner.runTests(all,out);
+                long startTime = System.currentTimeMillis();
+                TestResult r = runner.runTests(all, out);
+                printResult(r,System.currentTimeMillis()-startTime);
             } finally {
                 System.setOut(out);
                 System.setErr(err);
@@ -208,7 +214,7 @@ public class TestMojo extends AbstractMojo
             // allocated channels
             final Set<Port> ports = Collections.synchronizedSet(new HashSet<Port>());
             final ThreadLocal<Port> port4thread = new ThreadLocal<Port>();
-
+            final long startTime = System.currentTimeMillis();
             try {
                 ExecutorService testRunners = Executors.newFixedThreadPool(concurrency);
 
@@ -238,9 +244,10 @@ public class TestMojo extends AbstractMojo
                     }
                 }
 
-                String msg = String.format("Tests run: %d,  Errors: %d", r.totalRun, r.failed);
+                printResult(r.toTestResult(), System.currentTimeMillis()-startTime);
 
-                if(testFailureIgnore || r.failed==0)
+                String msg = String.format("Tests run: %d,  Failures: %d,  Errors: %d", r.totalRun, r.failures.size(), r.errors.size());
+                if(testFailureIgnore || r.isSuccess())
                     getLog().info(msg);
                 else
                     throw new MojoFailureException(msg);
@@ -256,6 +263,21 @@ public class TestMojo extends AbstractMojo
             }
         } catch (InterruptedException e) {
             throw new MojoExecutionException("Failed to execute JUnit tests",e);
+        }
+    }
+
+    private void printResult(TestResult r, long totalTime) {
+        ResultPrinter printer = new ResultPrinter(System.out);
+        try {
+            Method m = printer.getClass().getDeclaredMethod("print",TestResult.class, long.class);
+            m.setAccessible(true);
+            m.invoke(printer,r,totalTime);
+        } catch (IllegalAccessException e) {
+            throw new Error(e); // impossible
+        } catch (InvocationTargetException e) {
+            throw new Error(e); // I'm lazy
+        } catch (NoSuchMethodException e) {
+            throw new Error(e); // impossible
         }
     }
 
