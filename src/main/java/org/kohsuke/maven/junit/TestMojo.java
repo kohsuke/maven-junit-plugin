@@ -83,7 +83,7 @@ public class TestMojo extends AbstractMojo
      */
     private void runTests(Test all, PrintStream report) {
         all = new TestWithListners(all,
-            new AntXmlFormatter(XMLJUnitResultFormatter.class, getReportDirectory())
+            new AntXmlFormatter2(XMLJUnitResultFormatter.class, getReportDirectory())
         );
         new TestRunner(report).doRun(all);
     }
