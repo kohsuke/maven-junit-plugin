@@ -169,19 +169,17 @@ public class TestMojo extends AbstractMojo
             // redirect output from the tests since they are captured in XML already
             PrintStream out = System.out;
             PrintStream err = System.err;
-            ProgressReporter reporter = new ProgressReporter(out);
             if (quiet) {
                 System.setOut(new PrintStream(new NullOutputStream()));
                 System.setErr(new PrintStream(new NullOutputStream()));
             }
             try {
                 long startTime = System.currentTimeMillis();
-                TestResult r = runner.runTests(all,reporter);
+                TestResult r = runner.runTests(all, out);
                 printResult(r,System.currentTimeMillis()-startTime);
             } finally {
                 System.setOut(out);
                 System.setErr(err);
-                reporter.close();
             }
         } catch (MalformedURLException e) {
             throw new MojoExecutionException("Failed to execute JUnit tests",e);
@@ -217,7 +215,6 @@ public class TestMojo extends AbstractMojo
             final Set<Port> ports = Collections.synchronizedSet(new HashSet<Port>());
             final ThreadLocal<Port> port4thread = new ThreadLocal<Port>();
             final long startTime = System.currentTimeMillis();
-            final ProgressReporter reporter = new ProgressReporter(System.out);
             try {
                 ExecutorService testRunners = Executors.newFixedThreadPool(concurrency);
 
@@ -231,7 +228,7 @@ public class TestMojo extends AbstractMojo
                                 port4thread.set(p=new Port());
                                 ports.add(p);
                             }
-                            return p.runner.runTestCase(testClassFile,reporter);
+                            return p.runner.runTestCase(testClassFile);
                         }
                     }));
                 }
@@ -255,7 +252,6 @@ public class TestMojo extends AbstractMojo
                 else
                     throw new MojoFailureException(msg);
             } finally {
-                reporter.close();
                 try {
                     for (Port p : ports)
                         p.channel.close();

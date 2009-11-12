@@ -47,8 +47,8 @@ public class LocalTestCaseRunner implements TestCaseRunner, Serializable {
         progress = System.out;
     }
 
-    public Result runTestCase(String fileName, ProgressListener listener) {
-        return Result.from(runTests(buildTestCase(fileName),listener));
+    public Result runTestCase(String fileName) {
+        return Result.from(runTests(buildTestCase(fileName),progress));
     }
 
     public void redirectToDevNull() {
@@ -87,11 +87,11 @@ public class LocalTestCaseRunner implements TestCaseRunner, Serializable {
     /**
      * Run tests and send the progress report to the given {@link PrintStream}.
      */
-    public TestResult runTests(Test all, ProgressListener listener) {
+    public TestResult runTests(Test all, PrintStream report) {
         TestResult tr = new TestResult();
         AntXmlFormatter formatter = new AntXmlFormatter(XMLJUnitResultFormatter.class, reportDirectory);
         tr.addListener(formatter);
-        tr.addListener(new TestListenerAdapter(listener));
+        tr.addListener(new ProgressReporter(report));
 
         Thread t = Thread.currentThread();
         ClassLoader old = t.getContextClassLoader();

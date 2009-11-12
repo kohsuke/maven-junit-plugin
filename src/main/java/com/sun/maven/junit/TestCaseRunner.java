@@ -23,7 +23,7 @@ public interface TestCaseRunner {
      * @param fileName
      *      File name of the test case class, relative to the class directory root.
      */
-    Result runTestCase(String fileName, ProgressListener listener);
+    Result runTestCase(String fileName);
 
     /**
      * Redirects the stdout/stderr to /dev/null.
