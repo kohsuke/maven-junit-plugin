@@ -1,4 +1,4 @@
-package org.kohsuke.maven.junit;
+package com.sun.maven.junit;
 
 import com.sun.istack.test.AntXmlFormatter;
 

@@ -1,4 +1,4 @@
-package org.kohsuke.maven.junit;
+package com.sun.maven.junit;
 
 import junit.framework.Test;
 import junit.framework.TestListener;

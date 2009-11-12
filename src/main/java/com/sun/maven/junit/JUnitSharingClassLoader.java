@@ -1,4 +1,4 @@
-package org.kohsuke.maven.junit;
+package com.sun.maven.junit;
 
 /**
  * Loads JUnit from another class loader, but otherwise delegate everything to the parent.

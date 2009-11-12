@@ -1,4 +1,4 @@
-package org.kohsuke.maven.junit;
+package com.sun.maven.junit;
 
 /*
  * Copyright 2001-2005 The Apache Software Foundation.
@@ -16,9 +16,9 @@ package org.kohsuke.maven.junit;
  * limitations under the License.
  */
 
-import com.sun.istack.test.AntXmlFormatter;
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import junit.framework.TestCase;
 import junit.textui.TestRunner;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -31,11 +31,28 @@ import org.apache.commons.io.output.NullOutputStream;
 
 import java.io.File;
 import java.io.PrintStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.net.ServerSocket;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+
+import hudson.remoting.Which;
+import hudson.remoting.Channel;
+import hudson.remoting.Launcher;
+import hudson.remoting.SocketInputStream;
+import hudson.remoting.SocketOutputStream;
 
 /**
  * Runs tests
@@ -76,6 +93,56 @@ public class TestMojo extends AbstractMojo
             System.setOut(out);
             System.setErr(err);
         }
+    }
+
+    public Channel forkAndRun(OutputStream stdout, OutputStream stderr) throws IOException {
+        // let the child process come connect to this port
+        ServerSocket serverSocket = new ServerSocket();
+        serverSocket.bind(new InetSocketAddress("localhost",0));
+        serverSocket.setSoTimeout(10*1000);
+
+        List<String> args = new ArrayList<String>();
+        args.add(new File(System.getProperty("java.home"),"bin/java").getAbsolutePath());
+        // TODO: system properties
+        ClasspathBuilder cb = new ClasspathBuilder();
+        cb.addJarOf(Channel.class).addJarOf(TestCase.class);
+
+        args.add("-cp");
+        args.add(cb.toString());
+        args.add(Launcher.class.getName());
+        args.add("-connectTo");
+        args.add("localhost:"+serverSocket.getLocalPort());
+
+        // fork
+        ProcessBuilder pb = new ProcessBuilder(args);
+        final Process proc = pb.start();
+
+        Socket s = serverSocket.accept();
+        serverSocket.close();
+
+        return new Channel("Channel to child process", executors,
+                new BufferedInputStream(new SocketInputStream(s)), new BufferedOutputStream(new SocketOutputStream(s))) {
+            /**
+             * Kill the process when the channel is severed.
+             */
+            @Override
+            protected synchronized void terminate(IOException e) {
+                super.terminate(e);
+                proc.destroy();
+            }
+
+            @Override
+            public synchronized void close() throws IOException {
+                super.close();
+                // wait for the process to complete
+                try {
+                    proc.waitFor();
+                } catch (InterruptedException e) {
+                    // process the interrupt later
+                    Thread.currentThread().interrupt();
+                }
+            }
+        };
     }
 
     /**
@@ -153,4 +220,6 @@ public class TestMojo extends AbstractMojo
         name = name.substring(0,name.length()-".class".length());
         return name.replace('/','.').replace('\\','.');
     }
+
+    private final ExecutorService executors = Executors.newCachedThreadPool();
 }
