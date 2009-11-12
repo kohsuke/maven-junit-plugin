@@ -90,9 +90,16 @@ public class LocalTestCaseRunner implements TestCaseRunner, Serializable {
      */
     public TestResult runTests(Test all, PrintStream report) {
         all = new TestWithListners(all,
-            new AntXmlFormatter2(XMLJUnitResultFormatter.class, reportDirectory)
+            new AntXmlFormatter(XMLJUnitResultFormatter.class, reportDirectory)
         );
-        return new TestRunner(report).doRun(all);
+        Thread t = Thread.currentThread();
+        ClassLoader old = t.getContextClassLoader();
+        t.setContextClassLoader(cl);
+        try {
+            return new TestRunner(report).doRun(all);
+        } finally {
+            t.setContextClassLoader(old);
+        }
     }
 
     protected boolean isTest(Class c) {
