@@ -42,7 +42,8 @@ public class LocalTestCaseRunner implements TestCaseRunner, Serializable {
     }
 
     public void setUp(List<URL> classpath) {
-        cl = new URLClassLoader(classpath.toArray(new URL[classpath.size()]),new JUnitSharingClassLoader(ClassLoader.getSystemClassLoader(),getClass().getClassLoader()));
+        // bootstrap class path + junit
+        cl = new URLClassLoader(classpath.toArray(new URL[classpath.size()]),new JUnitSharingClassLoader(null,getClass().getClassLoader()));
         progress = System.out;
     }
 
