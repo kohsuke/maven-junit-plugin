@@ -150,9 +150,22 @@ public class TestMojo extends AbstractMojo
      *
      * @parameter
      */
-    private Properties systemProperties = new Properties();
+    protected Properties systemProperties = new Properties();
+
+    /**
+     * Set this to 'true' to skip running tests, but still compile them. Its use is NOT RECOMMENDED, but quite
+     * convenient on occasion.
+     *
+     * @parameter expression="${skipTests}"
+     */
+    protected boolean skipTests;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
+        if (skipTests) {
+            getLog().info("Tests are skipped.");
+            return;
+        }
+
         normalizeParameters();
 
         if (fork)
