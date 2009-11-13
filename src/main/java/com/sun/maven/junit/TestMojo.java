@@ -54,6 +54,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.Properties;
+import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -114,7 +116,6 @@ public class TestMojo extends AbstractMojo
      * debuggability options (without overwriting the other options specified in the argLine).
      *
      * @parameter expression="${maven.surefire.debug}"
-     * @since 2.4
      */
     protected String debugForkedProcess;
 
@@ -134,9 +135,22 @@ public class TestMojo extends AbstractMojo
      * always in the test result XML file, regardless of the value of this option.)
      *
      * @parameter expression="${maven.junit.quiet}" default-value="true"
-     * @since 2.3
      */
     protected boolean quiet;
+
+    /**
+     * Arbitrary JVM options to set on the command line. Used when forking.
+     *
+     * @parameter expression="${argLine}"
+     */
+    protected String argLine;
+
+    /**
+     * List of System properties to pass to the JUnit tests.
+     *
+     * @parameter
+     */
+    private Properties systemProperties = new Properties();
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         normalizeParameters();
@@ -301,11 +315,10 @@ public class TestMojo extends AbstractMojo
         ClasspathBuilder cb = new ClasspathBuilder();
         cb.addJarOf(Channel.class).addJarOf(TestCase.class);
 
-        if (debugForkedProcess!=null) {
-            StringTokenizer tokens = new StringTokenizer(debugForkedProcess);
-            while (tokens.hasMoreTokens())
-                args.add(tokens.nextToken());
-        }
+        addTokenized(args, debugForkedProcess);
+        addTokenized(args, argLine);
+        for (Entry<Object, Object> e : systemProperties.entrySet())
+            args.add("-D"+e.getKey()+'='+e.getValue());
         args.add("-cp");
         args.add(cb.toString());
         args.add(Launcher.class.getName());
@@ -351,6 +364,14 @@ public class TestMojo extends AbstractMojo
                 }
             }
         };
+    }
+
+    private void addTokenized(List<String> args, String line) {
+        if (line == null)   return;
+
+        StringTokenizer tokens = new StringTokenizer(line);
+        while (tokens.hasMoreTokens())
+            args.add(tokens.nextToken());
     }
 
 
