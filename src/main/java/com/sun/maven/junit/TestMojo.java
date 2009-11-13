@@ -260,11 +260,10 @@ public class TestMojo extends AbstractMojo
 
                 printResult(r.toTestResult(), System.currentTimeMillis()-startTime);
 
-                String msg = String.format("Tests run: %d,  Failures: %d,  Errors: %d", r.totalRun, r.failures.size(), r.errors.size());
-                if(testFailureIgnore || r.isSuccess())
-                    getLog().info(msg);
-                else
-                    throw new MojoFailureException(msg);
+                if (!r.isSuccess() && !testFailureIgnore) {// fatal failure
+                    String msg = String.format("Tests run: %d,  Failures: %d,  Errors: %d", r.totalRun, r.failures.size(), r.errors.size());
+                    throw new MojoExecutionException(msg);
+                }
             } finally {
                 try {
                     for (Port p : ports)

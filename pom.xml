@@ -83,6 +83,12 @@
       <artifactId>remoting</artifactId>
       <version>1.333</version>
     </dependency>
+    <dependency><!-- convenient to be able to see the whole Maven during debugging -->
+      <groupId>org.apache.maven</groupId>
+      <artifactId>apache-maven</artifactId>
+      <version>2.2.1</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <repositories>
