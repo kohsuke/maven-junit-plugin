@@ -26,7 +26,6 @@ final class CopyThread extends Thread {
                     out.write(buf, 0, len);
             } finally {
                 in.close();
-                out.close();
             }
         } catch (IOException e) {
             // TODO: what to do?
