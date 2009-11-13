@@ -20,11 +20,12 @@ public class ProgressReporter implements TestListener {
     }
 
     public void addError(Test test, Throwable t) {
-        letter('E');
+        report.println("FAILURE: "+test.toString());
+        t.printStackTrace(report);
     }
 
     public void addFailure(Test test, AssertionFailedError t) {
-        letter('F');
+        addError(test,t);
     }
 
     public void endTest(Test test) {
