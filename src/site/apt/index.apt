@@ -1,0 +1,6 @@
+
+What?
+
+  This Maven plugin executes JUnit tests in your Maven projects. Compared to Surefire, this plugin is capable of executing tests in parallel --- either inside a single process, if your tests are well isolated from each other, or in several processes, if your tests collide on some VM-wide resources.
+
+  This parallel execution capability greatly reduces the time it takes to run tests on modern multi-core/multi-socket systems.
