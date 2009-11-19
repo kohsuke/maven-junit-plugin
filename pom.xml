@@ -5,6 +5,7 @@
   <packaging>maven-plugin</packaging>
   <version>1.2-SNAPSHOT</version>
   <name>maven-junit-plugin Maven Mojo</name>
+  <description>Maven plugin to run JUnit tests in parallel</description>
 
   <build>
     <plugins>
@@ -111,4 +112,12 @@
   <scm>
     <connection>scm:git:git://github.com/kohsuke/maven-junit-plugin.git</connection>
   </scm>
+
+  <reporting>
+    <plugins>
+      <plugin>
+        <artifactId>maven-plugin-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </reporting>
 </project>
