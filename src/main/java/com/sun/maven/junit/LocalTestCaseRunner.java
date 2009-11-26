@@ -2,7 +2,9 @@ package com.sun.maven.junit;
 
 import hudson.remoting.Callable;
 import hudson.remoting.Channel;
+import junit.framework.JUnit4TestAdapter;
 import junit.framework.Test;
+import junit.framework.TestCase;
 import junit.framework.TestResult;
 import junit.framework.TestSuite;
 import org.apache.commons.io.output.NullOutputStream;
@@ -78,7 +80,11 @@ public class LocalTestCaseRunner implements TestCaseRunner, Serializable {
             } catch (NoSuchMethodException e) {
                 // fall through
             }
-            return new TestSuite(c);
+            if (TestCase.class.isAssignableFrom(c)) {
+            	return new TestSuite(c);
+            } else {
+            	return new JUnit4TestAdapter(c);
+            }
         } catch (ClassNotFoundException e) {
             return new FailedTest(e);
         }

@@ -7,6 +7,7 @@ import junit.framework.TestListener;
 import org.apache.tools.ant.taskdefs.optional.junit.JUnitResultFormatter;
 import org.apache.tools.ant.taskdefs.optional.junit.JUnitTest;
 import org.apache.tools.ant.taskdefs.optional.junit.JUnitVersionHelper;
+import org.junit.runner.Describable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -91,6 +92,9 @@ public class AntXmlFormatter implements TestListener, Closeable {
     }
 
     private String getTestName(Test test) {
+    	if (test instanceof Describable) {
+    		return ((Describable) test).getDescription().getDisplayName();
+    	}
         String testName = JUnitVersionHelper.getTestCaseName(test);
         if(testName==null)      testName="unknown";
 
