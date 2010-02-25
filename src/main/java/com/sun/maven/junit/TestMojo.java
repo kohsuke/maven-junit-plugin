@@ -160,6 +160,13 @@ public class TestMojo extends AbstractMojo
      */
     protected boolean skipTests;
 
+    /**
+     * Base directory where all reports are written to.
+     *
+     * @parameter expression="${project.build.directory}/surefire-reports"
+     */
+    private File reportsDirectory;
+
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (skipTests) {
             getLog().info("Tests are skipped.");
@@ -388,7 +395,7 @@ public class TestMojo extends AbstractMojo
 
 
     private File getReportDirectory() {
-        File dir = new File(project.getBasedir(), "target/surefire-reports");
+        File dir = new File(reportsDirectory, "surefire-reports");
         dir.mkdirs();
         return dir;
     }
