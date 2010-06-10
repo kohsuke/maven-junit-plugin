@@ -104,8 +104,8 @@
       <url>java-net:/maven2-repository/trunk/repository/</url>
     </repository>
     <site>
-      <id>kenai</id>
-      <url>dav:https://kenai.com/website/maven-junit-plugin/</url>
+      <id>kohsuke.org</id>
+      <url>scp://kohsuke.org/home/kohsuke/kohsuke.org/maven-junit-plugin/</url>
     </site>
   </distributionManagement>
 
