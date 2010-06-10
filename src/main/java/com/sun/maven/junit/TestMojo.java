@@ -389,9 +389,8 @@ public class TestMojo extends AbstractMojo
 
 
     private File getReportDirectory() {
-        File dir = new File(reportsDirectory, "surefire-reports");
-        dir.mkdirs();
-        return dir;
+        reportsDirectory.mkdirs();
+        return reportsDirectory;
     }
 
     private TestSuite buildTestSuite(LocalTestCaseRunner r, TestSuite testSuite) throws MojoExecutionException {
