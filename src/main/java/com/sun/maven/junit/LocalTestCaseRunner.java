@@ -38,21 +38,29 @@ public class LocalTestCaseRunner implements TestCaseRunner, Serializable {
     private transient ClassLoader cl;
 
     private transient PrintStream progress;
+    private AntXmlFormatter formatter;
 
     public LocalTestCaseRunner(File reportDirectory) {
         this.reportDirectory = reportDirectory;
     }
 
-    public void setUp(List<URL> classpath) {
+    public void setUp(List<URL> classpath, boolean quiet) {
         // bootstrap class path + junit
         cl = new URLClassLoader(classpath.toArray(new URL[classpath.size()]),new JUnitSharingClassLoader(null,getClass().getClassLoader()));
         progress = System.out;
+        if (quiet) redirectToDevNull();
+        formatter = new AntXmlFormatter(XMLJUnitResultFormatter.class, reportDirectory);
     }
 
     public Result runTestCase(String fileName) {
         return Result.from(runTests(buildTestCase(fileName),progress));
     }
 
+    /**
+     * Redirects the stdout/stderr to /dev/null.
+     *
+     * This method doesn't actually belong here but it's convenient to do this.
+     */
     public void redirectToDevNull() {
         System.setOut(new PrintStream(new NullOutputStream()));
         System.setErr(new PrintStream(new NullOutputStream()));
@@ -95,7 +103,6 @@ public class LocalTestCaseRunner implements TestCaseRunner, Serializable {
      */
     public TestResult runTests(Test all, PrintStream report) {
         TestResult tr = new TestResult();
-        AntXmlFormatter formatter = new AntXmlFormatter(XMLJUnitResultFormatter.class, reportDirectory);
         tr.addListener(formatter);
         tr.addListener(new ProgressReporter(report));
 
@@ -106,10 +113,13 @@ public class LocalTestCaseRunner implements TestCaseRunner, Serializable {
             all.run(tr);
         } finally {
             t.setContextClassLoader(old);
-            formatter.close();
         }
 
         return tr;
+    }
+
+    public void tearDown() {
+        formatter.close();        
     }
 
     protected boolean isTest(Class c) {

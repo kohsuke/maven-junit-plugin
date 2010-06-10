@@ -194,26 +194,19 @@ public class TestMojo extends AbstractMojo
     }
 
     public void executeLocal() throws MojoExecutionException {
+        PrintStream progress = System.out; // before we start messing around with stdout/stderr, this is where we send the progres report.
         try {
             LocalTestCaseRunner runner = createTestCaseRunner();
-            runner.setUp(makeClassPath());
+            runner.setUp(makeClassPath(), quiet);
 
-            Test all = buildTestSuite(runner, concurrency>1 ? new ParallelTestSuite(concurrency) : new TestSuite());
-
-            // redirect output from the tests since they are captured in XML already
-            PrintStream out = System.out;
-            PrintStream err = System.err;
-            if (quiet) {
-                System.setOut(new PrintStream(new NullOutputStream()));
-                System.setErr(new PrintStream(new NullOutputStream()));
-            }
             try {
+                Test all = buildTestSuite(runner, concurrency>1 ? new ParallelTestSuite(concurrency) : new TestSuite());
+
                 long startTime = System.currentTimeMillis();
-                TestResult r = runner.runTests(all, out);
+                TestResult r = runner.runTests(all, progress);
                 printResult(r,System.currentTimeMillis()-startTime);
             } finally {
-                System.setOut(out);
-                System.setErr(err);
+                runner.tearDown();
             }
         } catch (MalformedURLException e) {
             throw new MojoExecutionException("Failed to execute JUnit tests",e);
@@ -241,8 +234,7 @@ public class TestMojo extends AbstractMojo
                 Port() throws IOException, InterruptedException {
                     channel = fork(System.out,remoteOps);
                     runner = createTestCaseRunner().copyTo(channel);
-                    runner.setUp(makeClassPath());
-                    if (quiet)      runner.redirectToDevNull();
+                    runner.setUp(makeClassPath(), quiet);
                 }
             }
             // allocated channels
@@ -286,8 +278,10 @@ public class TestMojo extends AbstractMojo
                 }
             } finally {
                 try {
-                    for (Port p : ports)
+                    for (Port p : ports) {
+                        p.runner.tearDown();
                         p.channel.close();
+                    }
                     remoteOps.shutdownNow();
                 } catch (IOException e) {
                     // if this fails, we want the root cause to be displayed, not the close failure

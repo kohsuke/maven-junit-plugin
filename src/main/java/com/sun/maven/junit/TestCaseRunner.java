@@ -13,9 +13,9 @@ public interface TestCaseRunner {
      * Prepares for the test execution.
      *
      * @param classpath
-     *      Classpath for running tests.
+     * @param quiet
      */
-    void setUp(List<URL> classpath);
+    void setUp(List<URL> classpath, boolean quiet);
 
     /**
      * Runs a single test case and returns the result.
@@ -26,9 +26,7 @@ public interface TestCaseRunner {
     Result runTestCase(String fileName);
 
     /**
-     * Redirects the stdout/stderr to /dev/null.
-     *
-     * This method doesn't actually belong here but it's convenient to do this.
+     * The clean up that pairs with {@link #setUp(List, boolean)}
      */
-    void redirectToDevNull();
+    void tearDown();
 }
