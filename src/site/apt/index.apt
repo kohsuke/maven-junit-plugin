@@ -4,12 +4,38 @@ What?
   This Maven plugin executes JUnit tests in your Maven projects. Compared to Surefire, this plugin is capable of executing tests in parallel --- either inside a single process, if your tests are well isolated from each other, or in several processes, if your tests collide on some VM-wide resources.
 
   This parallel execution capability greatly reduces the time it takes to run tests on modern multi-core/multi-socket systems.
-  To use it you have to disable execution of the surefire-plugin:
-  +------------------+
-            <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip><!-- tests now run by maven-junit-plugin -->
-                </configuration>
-            </plugin>
-  +------------------+
+  To use it you have to disable execution of the surefire-plugin and enable execution of this plugin in the test phase:
++------------------+
+<plugin>
+    <artifactId>maven-surefire-plugin</artifactId>
+    <configuration>
+        <skip>true</skip><!-- tests now run by maven-junit-plugin -->
+    </configuration>
+</plugin>
+<plugin>
+    <!-- see http://maven-junit-plugin.kenai.com/ for more info -->
+    <groupId>com.sun.maven</groupId>
+    <artifactId>maven-junit-plugin</artifactId>
+    <version>1.5</version>
+    <executions>
+        <execution>
+            <goals>
+                <goal>test</goal>
+            </goals>
+            <configuration>
+                <testFailureIgnore>true</testFailureIgnore>
+                <fork>true</fork>
+                <concurrency>1</concurrency> <!-- -1 means # of processors in the system -->
+                <argLine>-XX:MaxPermSize=192m -Xmx256m -Dfile.encoding=UTF-8</argLine>
+                <systemProperties>
+                    <property>
+                        <!-- use AntClassLoader that supports predictable file handle release -->
+                        <name>hudson.ClassicPluginStrategy.useAntClassLoader</name>
+                        <value>true</value>
+                    </property>
+                </systemProperties>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
++------------------+
