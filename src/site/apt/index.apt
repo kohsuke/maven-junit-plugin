@@ -5,6 +5,7 @@ What?
 
   This parallel execution capability greatly reduces the time it takes to run tests on modern multi-core/multi-socket systems.
   To use it you have to disable execution of the surefire-plugin and enable execution of this plugin in the test phase:
+
 +------------------+
 <plugin>
     <artifactId>maven-surefire-plugin</artifactId>
