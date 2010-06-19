@@ -112,6 +112,7 @@
   </distributionManagement>
 
   <scm>
+    <url>http://github.com/kohsuke/maven-junit-plugin</url>
     <connection>scm:git:git://github.com/kohsuke/maven-junit-plugin.git</connection>
   </scm>
 
