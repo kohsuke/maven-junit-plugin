@@ -167,6 +167,21 @@ public class TestMojo extends AbstractMojo
      */
     private File reportsDirectory;
 
+    /**
+     * A list of &lt;exclude> elements specifying the tests (by pattern) that should be excluded in testing. When not
+     * specified and when the <code>test</code> parameter is not specified, the default excludes will be
+     * <code><br/>
+     * &lt;excludes><br/>
+     * &nbsp;&lt;exclude>**&#47;*$*&lt;/exclude><br/>
+     * &lt;/excludes><br/>
+     * </code>
+     * (which excludes all inner classes).<br>
+     * This parameter is ignored if the TestNG <code>suiteXmlFiles</code> parameter is specified.
+     *
+     * @parameter
+     */
+    private List<String> excludes;
+
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (skipTests) {
             getLog().info("Tests are skipped.");
@@ -403,6 +418,10 @@ public class TestMojo extends AbstractMojo
         FileSet fs = new FileSet();
         fs.setDir(getTestOutputDirectory());
         fs.setIncludes("**/"+test.replace('.','/')+".class");
+        if (excludes!=null) {
+            for (String exclude : excludes)
+                fs.setExcludes(exclude);
+        }
         return fs.getDirectoryScanner(new Project());
     }
 
