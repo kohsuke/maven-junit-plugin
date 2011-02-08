@@ -416,8 +416,13 @@ public class TestMojo extends AbstractMojo
     }
 
     private TestSuite buildTestSuite(LocalTestCaseRunner r, TestSuite testSuite) throws MojoExecutionException {
+        int index = test.indexOf( '#' );
+        String methodName = null;
+        if (index>=0) {
+            methodName = test.substring( index + 1, test.length() );
+        }         
         for (String name : scanTestClasses().getIncludedFiles())
-            testSuite.addTest(r.buildTestCase(name));
+            testSuite.addTest(r.buildTestCase(name + (methodName == null ? "" : "#" + methodName)));
         return testSuite;
     }
 

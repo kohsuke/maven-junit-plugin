@@ -9,6 +9,7 @@ import junit.framework.TestResult;
 import junit.framework.TestSuite;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.tools.ant.taskdefs.optional.junit.XMLJUnitResultFormatter;
+import org.codehaus.plexus.util.SelectorUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,6 +21,7 @@ import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * {@link TestCaseRunner} that runs tests on the current JVM.
@@ -108,9 +110,12 @@ public class LocalTestCaseRunner implements TestCaseRunner, Serializable {
                 if (methodName == null) {
                     return new TestSuite(c);
                 }
+                Pattern methodNamePattern = Pattern.compile( methodName );
                 TestSuite test = new TestSuite();
                 for (Method m : c.getMethods()) {
-                    if (m.getName().equalsIgnoreCase( methodName )) {
+                    if (SelectorUtils.match( methodName, m.getName() ) ) {
+                    //if (m.getName().equalsIgnoreCase( methodName )) {
+                    //if (methodNamePattern.matcher( m.getName() ).matches()) {
                         test.addTest( TestSuite.createTest( c, m.getName() ) );
                     }
                 }
