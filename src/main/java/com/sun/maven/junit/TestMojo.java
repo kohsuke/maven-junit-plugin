@@ -126,6 +126,8 @@ public class TestMojo extends AbstractMojo
      * include pattern formatted like <code>**&#47;${test}.java</code>, so you can just type "-Dtest=MyTest"
      * to run a single test called "foo/MyTest.java".  This parameter will override the TestNG suiteXmlFiles
      * parameter.
+     * since 1.7 you can now use "-Dtest=MyTest#method" to execute only one method of the unit tests.
+     * Note * is supported too "-Dtest=MyTest#method*" to execute only method starting with method
      *
      * @parameter expression="${test}"
      */
