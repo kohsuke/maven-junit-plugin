@@ -53,8 +53,13 @@ public class LocalTestCaseRunner implements TestCaseRunner, Serializable {
     }
 
     public Result runTestCase(String fileName) {
-        return Result.from(runTests(buildTestCase(fileName),progress));
+        return runTestCase( fileName, null );
     }
+    
+    public Result runTestCase(String fileName, String methodName) {
+        return Result.from(runTests(buildTestCase(fileName),progress));
+    }    
+    
 
     /**
      * Redirects the stdout/stderr to /dev/null.
@@ -67,6 +72,17 @@ public class LocalTestCaseRunner implements TestCaseRunner, Serializable {
     }
 
     public Test buildTestCase(String fileName) {
+        int index = fileName.indexOf( '#' );
+        String methodName = null;
+        if (index>=0) {
+            methodName = fileName.substring( index + 1, fileName.length() );
+            return buildMethodTestCase( fileName.substring( 0, index ), methodName );
+        }
+        return buildMethodTestCase( fileName, methodName );
+        
+    }
+    
+    private Test buildMethodTestCase(String fileName, String methodName) {
         String className = toClassName(fileName);
         try {
             Class c = cl.loadClass(className);
@@ -89,14 +105,25 @@ public class LocalTestCaseRunner implements TestCaseRunner, Serializable {
                 // fall through
             }
             if (TestCase.class.isAssignableFrom(c)) {
-            	return new TestSuite(c);
+                if (methodName == null) {
+                    return new TestSuite(c);
+                }
+                TestSuite test = new TestSuite();
+                for (Method m : c.getMethods()) {
+                    if (m.getName().equalsIgnoreCase( methodName )) {
+                        test.addTest( TestSuite.createTest( c, m.getName() ) );
+                    }
+                }
+                return test;
             } else {
-            	return new JUnit4TestAdapter(c);
+                return new JUnit4TestAdapter(c);
             }
         } catch (ClassNotFoundException e) {
             return new FailedTest(e);
         }
-    }
+    }    
+    
+    
 
     /**
      * Run tests and send the progress report to the given {@link PrintStream}.

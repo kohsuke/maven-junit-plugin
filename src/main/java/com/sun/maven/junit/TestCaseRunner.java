@@ -24,7 +24,7 @@ public interface TestCaseRunner {
      *      File name of the test case class, relative to the class directory root.
      */
     Result runTestCase(String fileName);
-
+    
     /**
      * The clean up that pairs with {@link #setUp(List, boolean)}
      */

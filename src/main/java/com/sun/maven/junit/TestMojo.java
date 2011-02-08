@@ -33,6 +33,7 @@ import org.apache.maven.project.MavenProject;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.types.FileSet;
+import org.codehaus.plexus.util.StringUtils;
 import org.kohsuke.junit.ParallelTestSuite;
 
 import java.io.BufferedInputStream;
@@ -269,7 +270,13 @@ public class TestMojo extends AbstractMojo
                                 port4thread.set(p=new Port());
                                 ports.add(p);
                             }
-                            return p.runner.runTestCase(testClassFile);
+                            int index = test.indexOf( '#' );
+                            String methodName = null;
+                            if (index>=0) {
+                                methodName = test.substring( index + 1, test.length() );
+                                return p.runner.runTestCase(testClassFile+"#"+methodName);
+                            }                             
+                            return p.runner.runTestCase(testClassFile);                            
                         }
                     }));
                 }
@@ -417,7 +424,12 @@ public class TestMojo extends AbstractMojo
     private DirectoryScanner scanTestClasses() {
         FileSet fs = new FileSet();
         fs.setDir(getTestOutputDirectory());
-        fs.setIncludes("**/"+test.replace('.','/')+".class");
+        // maybe user use Test#myMethod
+        String classNamesPattern = test;
+        if (test.contains( "#" )) {
+            classNamesPattern = test.substring( 0, test.indexOf( '#' ));
+        }
+        fs.setIncludes("**/"+classNamesPattern.replace('.','/')+".class");
         if (excludes!=null) {
             for (String exclude : excludes)
                 fs.setExcludes(exclude);
