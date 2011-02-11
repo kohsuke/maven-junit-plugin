@@ -110,12 +110,9 @@ public class LocalTestCaseRunner implements TestCaseRunner, Serializable {
                 if (methodName == null) {
                     return new TestSuite(c);
                 }
-                Pattern methodNamePattern = Pattern.compile( methodName );
                 TestSuite test = new TestSuite();
                 for (Method m : c.getMethods()) {
                     if (SelectorUtils.match( methodName, m.getName() ) ) {
-                    //if (m.getName().equalsIgnoreCase( methodName )) {
-                    //if (methodNamePattern.matcher( m.getName() ).matches()) {
                         test.addTest( TestSuite.createTest( c, m.getName() ) );
                     }
                 }
