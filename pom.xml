@@ -89,9 +89,9 @@
       <version>1.1</version>
     </dependency>
     <dependency>
-      <groupId>org.jvnet.hudson.main</groupId>
+      <groupId>org.jenkins-ci.main</groupId>
       <artifactId>remoting</artifactId>
-      <version>1.333</version>
+      <version>1.406</version>
     </dependency>
     <dependency><!-- convenient to be able to see the whole Maven during debugging -->
       <groupId>org.apache.maven</groupId>
