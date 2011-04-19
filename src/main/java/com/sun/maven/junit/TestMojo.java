@@ -255,6 +255,17 @@ public class TestMojo extends AbstractMojo
                     runner.setUp(makeClassPath(), quiet);
                 }
             }
+
+            class Task {
+                String testCaseFile;
+                Future<Result> future;
+
+                Task(String testCaseFile, Future<Result> future) {
+                    this.testCaseFile = testCaseFile;
+                    this.future = future;
+                }
+            }
+
             // allocated channels
             final Set<Port> ports = Collections.synchronizedSet(new HashSet<Port>());
             final ThreadLocal<Port> port4thread = new ThreadLocal<Port>();
@@ -263,9 +274,9 @@ public class TestMojo extends AbstractMojo
                 ExecutorService testRunners = Executors.newFixedThreadPool(concurrency);
 
                 // schedule executions
-                List<Future<Result>> jobs = new ArrayList<Future<Result>>();
+                List<Task> jobs = new ArrayList<Task>();
                 for (final String testClassFile : scanTestClasses().getIncludedFiles()) {
-                    jobs.add(testRunners.submit(new Callable<Result>() {
+                    jobs.add(new Task(testClassFile,testRunners.submit(new Callable<Result>() {
                         public Result call() throws Exception {
                             Port p = port4thread.get();
                             if (p==null) {
@@ -280,19 +291,22 @@ public class TestMojo extends AbstractMojo
                             }                             
                             return p.runner.runTestCase(testClassFile);                            
                         }
-                    }));
+                    })));
                 }
 
                 // tally the results
                 Result r = Result.ZERO;
-                for (Future<Result> f : jobs) {
+                String oldName = Thread.currentThread().getName();
+                for (Task f : jobs) {
                     try {
-                        r = r.add(f.get());
+                        Thread.currentThread().setName(oldName+" : waiting for "+f.testCaseFile);
+                        r = r.add(f.future.get());
                     } catch (ExecutionException e) {
                         e.printStackTrace();
                         throw new MojoExecutionException("Failed to run a test",e);
                     }
                 }
+                Thread.currentThread().setName(oldName);
 
                 printResult(r.toTestResult(), System.currentTimeMillis()-startTime);
 
