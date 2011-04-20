@@ -36,6 +36,7 @@ import org.apache.tools.ant.types.FileSet;
 import org.codehaus.plexus.util.StringUtils;
 import org.kohsuke.junit.ParallelTestSuite;
 
+import javax.sound.sampled.Port;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -283,13 +284,20 @@ public class TestMojo extends AbstractMojo
                                 port4thread.set(p=new Port());
                                 ports.add(p);
                             }
-                            int index = test.indexOf( '#' );
-                            String methodName = null;
-                            if (index>=0) {
-                                methodName = test.substring( index + 1, test.length() );
-                                return p.runner.runTestCase(testClassFile+"#"+methodName);
-                            }                             
-                            return p.runner.runTestCase(testClassFile);                            
+                            String oldName = Thread.currentThread().getName();
+                            try {
+                                int index = test.indexOf( '#' );
+                                if (index>=0) {
+                                    String methodName = test.substring( index + 1, test.length() );
+                                    Thread.currentThread().setName(oldName+" : executing test "+testClassFile+"#"+methodName);
+                                    return p.runner.runTestCase(testClassFile+"#"+methodName);
+                                }
+
+                                Thread.currentThread().setName(oldName+" : executing test "+testClassFile);
+                                return p.runner.runTestCase(testClassFile);
+                            } finally {
+                                Thread.currentThread().setName(oldName);
+                            }
                         }
                     })));
                 }
