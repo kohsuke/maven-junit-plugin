@@ -84,6 +84,12 @@ public class Result implements Serializable {
         return r;
     }
 
+    public static Result fromFailure(Failure f) {
+        Result r = new Result(1);
+        r.failures.add(f);
+        return r;
+    }
+
     public boolean isSuccess() {
         return failures.isEmpty() && errors.isEmpty();
     }

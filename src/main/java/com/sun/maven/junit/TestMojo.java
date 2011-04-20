@@ -16,6 +16,7 @@ package com.sun.maven.junit;
  * limitations under the License.
  */
 
+import com.sun.maven.junit.Result.Failure;
 import hudson.remoting.Channel;
 import hudson.remoting.Launcher;
 import hudson.remoting.SocketInputStream;
@@ -25,7 +26,6 @@ import junit.framework.TestCase;
 import junit.framework.TestResult;
 import junit.framework.TestSuite;
 import junit.textui.ResultPrinter;
-import org.apache.commons.io.output.NullOutputStream;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -33,10 +33,8 @@ import org.apache.maven.project.MavenProject;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.types.FileSet;
-import org.codehaus.plexus.util.StringUtils;
 import org.kohsuke.junit.ParallelTestSuite;
 
-import javax.sound.sampled.Port;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -63,6 +61,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Runs tests
@@ -172,6 +172,14 @@ public class TestMojo extends AbstractMojo
     private File reportsDirectory;
 
     /**
+     * Abort the test if it doesn't complete in the given number of seconds.
+     * 0 means no timeout.
+     *
+     * @parameter expression="${maven.junit.timeout}"
+     */
+    private int timeout = 0;
+
+    /**
      * A list of &lt;exclude> elements specifying the tests (by pattern) that should be excluded in testing. When not
      * specified and when the <code>test</code> parameter is not specified, the default excludes will be
      * <code><br/>
@@ -257,19 +265,46 @@ public class TestMojo extends AbstractMojo
                 }
             }
 
-            class Task {
-                String testCaseFile;
-                Future<Result> future;
-
-                Task(String testCaseFile, Future<Result> future) {
-                    this.testCaseFile = testCaseFile;
-                    this.future = future;
-                }
-            }
-
             // allocated channels
             final Set<Port> ports = Collections.synchronizedSet(new HashSet<Port>());
             final ThreadLocal<Port> port4thread = new ThreadLocal<Port>();
+
+            class Task implements Callable<Result> {
+                final String testClassFile;
+                final Future<Result> future;
+                volatile long startTime;
+
+                Task(String testClassFile, ExecutorService es) {
+                    this.testClassFile = testClassFile;
+                    this.future = es.submit(this);
+                }
+
+                public Result call() throws Exception {
+                    Port p = port4thread.get();
+                    if (p==null) {
+                        port4thread.set(p=new Port());
+                        ports.add(p);
+                    }
+
+                    startTime = System.currentTimeMillis();
+
+                    String oldName = Thread.currentThread().getName();
+                    try {
+                        int index = test.indexOf( '#' );
+                        if (index>=0) {
+                            String methodName = test.substring( index + 1, test.length() );
+                            Thread.currentThread().setName(oldName+" : executing test "+testClassFile+"#"+methodName);
+                            return p.runner.runTestCase(testClassFile+"#"+methodName);
+                        }
+
+                        Thread.currentThread().setName(oldName+" : executing test "+testClassFile);
+                        return p.runner.runTestCase(testClassFile);
+                    } finally {
+                        Thread.currentThread().setName(oldName);
+                    }
+                }
+            }
+
             final long startTime = System.currentTimeMillis();
             try {
                 ExecutorService testRunners = Executors.newFixedThreadPool(concurrency);
@@ -277,29 +312,7 @@ public class TestMojo extends AbstractMojo
                 // schedule executions
                 List<Task> jobs = new ArrayList<Task>();
                 for (final String testClassFile : scanTestClasses().getIncludedFiles()) {
-                    jobs.add(new Task(testClassFile,testRunners.submit(new Callable<Result>() {
-                        public Result call() throws Exception {
-                            Port p = port4thread.get();
-                            if (p==null) {
-                                port4thread.set(p=new Port());
-                                ports.add(p);
-                            }
-                            String oldName = Thread.currentThread().getName();
-                            try {
-                                int index = test.indexOf( '#' );
-                                if (index>=0) {
-                                    String methodName = test.substring( index + 1, test.length() );
-                                    Thread.currentThread().setName(oldName+" : executing test "+testClassFile+"#"+methodName);
-                                    return p.runner.runTestCase(testClassFile+"#"+methodName);
-                                }
-
-                                Thread.currentThread().setName(oldName+" : executing test "+testClassFile);
-                                return p.runner.runTestCase(testClassFile);
-                            } finally {
-                                Thread.currentThread().setName(oldName);
-                            }
-                        }
-                    })));
+                    jobs.add(new Task(testClassFile,testRunners));
                 }
 
                 // tally the results
@@ -307,8 +320,28 @@ public class TestMojo extends AbstractMojo
                 String oldName = Thread.currentThread().getName();
                 for (Task f : jobs) {
                     try {
-                        Thread.currentThread().setName(oldName+" : waiting for "+f.testCaseFile);
-                        r = r.add(f.future.get());
+                        Thread.currentThread().setName(oldName+" : waiting for "+f.testClassFile);
+                        while (true) {// time out loop
+                            long timeoutMillis = -1;
+                            if (this.timeout>0) {
+                                if (f.startTime>0)
+                                    timeoutMillis = Math.max(0,System.currentTimeMillis()-timeoutMillis);
+                                else
+                                    timeoutMillis = this.timeout * 1000;
+                            }
+                            try {
+                                r = r.add(timeoutMillis==-1 ? f.future.get() : f.future.get(timeoutMillis, TimeUnit.MILLISECONDS));
+                            } catch (TimeoutException e) {
+                                if (f.startTime>0 && System.currentTimeMillis()-f.startTime > this.timeout*1000) {
+                                    r.add(Result.fromFailure(new Failure("Test "+f.testClassFile+" timed out",e)));
+                                    f.future.cancel(true);
+                                } else {
+                                    continue;
+                                }
+                            }
+
+                            break;
+                        }
                     } catch (ExecutionException e) {
                         e.printStackTrace();
                         throw new MojoExecutionException("Failed to run a test",e);
