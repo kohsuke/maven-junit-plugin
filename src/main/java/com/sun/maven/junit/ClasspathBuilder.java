@@ -23,7 +23,7 @@ public class ClasspathBuilder {
         return add(f.getAbsolutePath());
     }
 
-    public ClasspathBuilder addJarOf(Class c) throws IOException {
+    public ClasspathBuilder addJarOf(Class<?> c) throws IOException {
         return add(Which.jarFile(c));
     }
 

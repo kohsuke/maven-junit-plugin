@@ -21,7 +21,6 @@ import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.List;
-import java.util.regex.Pattern;
 
 /**
  * {@link TestCaseRunner} that runs tests on the current JVM.
@@ -87,7 +86,7 @@ public class LocalTestCaseRunner implements TestCaseRunner, Serializable {
     private Test buildMethodTestCase(String fileName, String methodName) {
         String className = toClassName(fileName);
         try {
-            Class c = cl.loadClass(className);
+            Class<?> c = cl.loadClass(className);
             if (!isTest(c))
                 return EMPTY;
 
@@ -151,7 +150,7 @@ public class LocalTestCaseRunner implements TestCaseRunner, Serializable {
         formatter.close();        
     }
 
-    protected boolean isTest(Class c) {
+    protected boolean isTest(Class<?> c) {
         return !Modifier.isAbstract(c.getModifiers());
     }
 
