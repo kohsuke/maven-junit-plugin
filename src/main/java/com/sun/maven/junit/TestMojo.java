@@ -221,7 +221,7 @@ public class TestMojo extends AbstractMojo
     }
 
     public void executeLocal() throws MojoExecutionException {
-        PrintStream progress = System.out; // before we start messing around with stdout/stderr, this is where we send the progres report.
+        PrintStream progress = System.out; // before we start messing around with stdout/stderr, this is where we send the progress report.
         try {
             LocalTestCaseRunner runner = createTestCaseRunner();
             runner.setUp(makeClassPath(), quiet);
@@ -290,15 +290,15 @@ public class TestMojo extends AbstractMojo
 
                     String oldName = Thread.currentThread().getName();
                     try {
+                        String testName = testClassFile;
                         int index = test.indexOf( '#' );
                         if (index>=0) {
                             String methodName = test.substring( index + 1, test.length() );
-                            Thread.currentThread().setName(oldName+" : executing test "+testClassFile+"#"+methodName);
-                            return p.runner.runTestCase(testClassFile+"#"+methodName);
+                            testName += "#"+methodName;
                         }
 
-                        Thread.currentThread().setName(oldName+" : executing test "+testClassFile);
-                        return p.runner.runTestCase(testClassFile);
+                        Thread.currentThread().setName(oldName+" : executing test "+testName);
+                        return p.runner.runTestCase(testName);
                     } finally {
                         Thread.currentThread().setName(oldName);
                     }
