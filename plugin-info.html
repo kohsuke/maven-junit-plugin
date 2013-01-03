@@ -1,0 +1,169 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+
+
+
+
+
+
+
+
+<html>
+  <head>
+    <title>Maven JUnit Plugin - Plugin Documentation</title>
+    <style type="text/css" media="all">
+      @import url("./css/maven-base.css");
+      @import url("./css/maven-theme.css");
+      @import url("./css/1024px.css");
+      @import url("./css/site.css");
+    </style>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+      </head>
+  <body>
+    <div id="wrap2"><div id="wrap">
+    <div id="header">
+      <p id="toplinks">Skip to: <a href="#content">Content</a> | <a href="#sidebar">Navigation</a> | <a href="#footer">Footer</a></p>
+		
+            <h1 id="bannerLeft">
+          <a href="http://maven-junit-plugin.kenai.com/">
+    
+            Maven JUnit Plugin
+    
+            </a>
+        </h1>
+                
+      <p id="slogan">Maven plugin to run JUnit tests in parallel</p>
+    </div>
+    <div id="breadcrumbs">
+      <div class="xright">  </div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+
+    <div id="sidebar">
+      <div id="navcolumn">
+              <h2>
+          Maven JUnit Plugin
+        </h2><ul>
+              
+    <li class="none">
+              <a href="index.html">Introduction</a>
+        </li>
+          </ul>
+      <h2>
+          Project Documentation
+        </h2><ul>
+              
+                
+              
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+              
+        <li class="collapsed">
+              <a href="project-info.html">Project Information</a>
+              </li>
+              
+                
+              
+      
+            
+            
+              
+            <li class="expanded">
+              <a href="project-reports.html">Project Reports</a>
+                <ul>
+                  
+    <li class="none">
+              <a href="apidocs/index.html">JavaDocs</a>
+        </li>
+                  
+    <li class="none">
+              <strong>Plugin Documentation</strong>
+        </li>
+              </ul>
+        </li>
+          </ul>
+        </div>
+    </div>
+    <div id="content">
+      <div id="contentBox">
+        <a name="Plugin_Documentation"></a><div class="section"><h2>Plugin Documentation<a name="Plugin_Documentation"></a></h2><p>Goals available for this plugin:</p><table border="0" class="bodyTable"><tr class="a"><th>Goal</th><th>Description</th></tr><tr class="b"><td><a href="help-mojo.html">junit:help</a></td><td>Display help information on maven-junit-plugin.<br />
+ Call 
+
+<pre>
+  mvn junit:help -Ddetail=true -Dgoal=&lt;goal-name&gt;
+</pre>
+
+to display parameter details.</td></tr><tr class="a"><td><a href="test-mojo.html">junit:test</a></td><td>Runs tests</td></tr></table><a name="System_Requirements"></a><div class="section"><h3>System Requirements<a name="System_Requirements"></a></h3><p>The following specifies the minimum requirements to run this Maven plugin:</p><table border="0" class="bodyTable"><tr class="b"><td>Maven</td><td>2.0</td></tr><tr class="a"><td>JDK</td><td>1.5</td></tr><tr class="b"><td>Memory</td><td>No minimum requirement.</td></tr><tr class="a"><td>Disk Space</td><td>No minimum requirement.</td></tr></table></div><a name="Usage"></a><div class="section"><h3>Usage<a name="Usage"></a></h3><p>You should specify the version in your project's plugin configuration:</p><div class="source"><pre>&lt;project&gt;
+  ...
+  &lt;build&gt;
+    &lt;!-- To define the plugin version in your parent POM --&gt;
+    &lt;pluginManagement&gt;
+      &lt;plugins&gt;
+        &lt;plugin&gt;
+          &lt;groupId&gt;org.kohsuke&lt;/groupId&gt;
+          &lt;artifactId&gt;maven-junit-plugin&lt;/artifactId&gt;
+          &lt;version&gt;1.11&lt;/version&gt;
+        &lt;/plugin&gt;
+        ...
+      &lt;/plugins&gt;
+    &lt;/pluginManagement&gt;
+    &lt;!-- To use the plugin goals in your POM or parent POM --&gt;
+    &lt;plugins&gt;
+      &lt;plugin&gt;
+        &lt;groupId&gt;org.kohsuke&lt;/groupId&gt;
+        &lt;artifactId&gt;maven-junit-plugin&lt;/artifactId&gt;
+        &lt;version&gt;1.11&lt;/version&gt;
+      &lt;/plugin&gt;
+      ...
+    &lt;/plugins&gt;
+  &lt;/build&gt;
+  ...
+&lt;/project&gt;
+</pre></div><p>For more information, see <a class="externalLink" href="http://maven.apache.org/guides/mini/guide-configuring-plugins.html">&quot;Guide to Configuring Plug-ins&quot;</a></p></div></div>
+      </div>
+    </div>
+    <div id="footer">
+      <div class="xright">&#169;  
+          2013
+    
+          
+  
+
+  
+  
+  &nbsp;| Last Published: 01/03/2013
+  &nbsp;| Version: 1.11
+</div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    </div></div>
+  </body>
+</html>

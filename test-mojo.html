@@ -1,0 +1,378 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+
+
+
+
+
+
+
+
+<html>
+  <head>
+    <title>Maven JUnit Plugin - 
+    junit:test</title>
+    <style type="text/css" media="all">
+      @import url("./css/maven-base.css");
+      @import url("./css/maven-theme.css");
+      @import url("./css/1024px.css");
+      @import url("./css/site.css");
+    </style>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+      </head>
+  <body>
+    <div id="wrap2"><div id="wrap">
+    <div id="header">
+      <p id="toplinks">Skip to: <a href="#content">Content</a> | <a href="#sidebar">Navigation</a> | <a href="#footer">Footer</a></p>
+		
+            <h1 id="bannerLeft">
+          <a href="http://maven-junit-plugin.kenai.com/">
+    
+            Maven JUnit Plugin
+    
+            </a>
+        </h1>
+                
+      <p id="slogan">Maven plugin to run JUnit tests in parallel</p>
+    </div>
+    <div id="breadcrumbs">
+      <div class="xright">  </div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+
+    <div id="sidebar">
+      <div id="navcolumn">
+              <h2>
+          Maven JUnit Plugin
+        </h2><ul>
+              
+    <li class="none">
+              <a href="index.html">Introduction</a>
+        </li>
+          </ul>
+      <h2>
+          Project Documentation
+        </h2><ul>
+              
+                
+              
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+              
+        <li class="collapsed">
+              <a href="project-info.html">Project Information</a>
+              </li>
+              
+                
+              
+      
+            
+      
+              
+        <li class="collapsed">
+              <a href="project-reports.html">Project Reports</a>
+              </li>
+          </ul>
+        </div>
+    </div>
+    <div id="content">
+      <div id="contentBox">
+        
+  
+    <div class="section"><h2>junit:test<a name="junit:test"></a></h2>
+      <p><b>Full name</b>:</p>
+      <p>org.kohsuke:maven-junit-plugin:1.11:test</p>
+      <p><b>Description</b>:</p>
+      <div>Runs tests</div>
+      <p><b>Attributes</b>:</p>
+      <ul>
+        <li>Requires a Maven project to be executed.</li>
+        <li>Requires dependency resolution of artifacts in scope: <tt>test</tt>.</li>
+        <li>Binds by default to the lifecycle phase: <tt>test</tt>.</li>
+      </ul>
+      <div class="section"><h3>Required Parameters<a name="Required_Parameters"></a></h3>
+        <table class="bodyTable" border="0">
+          <tr class="a">
+            <th>Name</th>
+            <th>Type</th>
+            <th>Since</th>
+            <th>Description</th>
+          </tr>
+          <tr class="b">
+            <td><b><a href="#project">project</a></b></td>
+            <td><tt>MavenProject</tt></td>
+            <td><tt>-</tt></td>
+            <td>(no description)<br /></td>
+          </tr>
+        </table>
+      </div>
+      <div class="section"><h3>Optional Parameters<a name="Optional_Parameters"></a></h3>
+        <table class="bodyTable" border="0">
+          <tr class="a">
+            <th>Name</th>
+            <th>Type</th>
+            <th>Since</th>
+            <th>Description</th>
+          </tr>
+          <tr class="b">
+            <td><b><a href="#argLine">argLine</a></b></td>
+            <td><tt>String</tt></td>
+            <td><tt>-</tt></td>
+            <td>Arbitrary JVM options to set on the command line. Used when
+forking.<br /></td>
+          </tr>
+          <tr class="a">
+            <td><b><a href="#concurrency">concurrency</a></b></td>
+            <td><tt>int</tt></td>
+            <td><tt>-</tt></td>
+            <td>Number of concurrent executions. Specify -N means &quot;N times
+#ofProcessors&quot;<br /></td>
+          </tr>
+          <tr class="b">
+            <td><b><a href="#debugForkedProcess">debugForkedProcess</a></b></td>
+            <td><tt>String</tt></td>
+            <td><tt>-</tt></td>
+            <td>Attach a debugger to the forked JVM. If set to &quot;true&quot;, the process
+will suspend and wait for a debugger to attach on port 5005. If set
+to some other string, that string will be appended to the argLine,
+allowing you to configure arbitrary debuggability options (without
+overwriting the other options specified in the argLine).<br /></td>
+          </tr>
+          <tr class="a">
+            <td><b><a href="#excludes">excludes</a></b></td>
+            <td><tt>List</tt></td>
+            <td><tt>-</tt></td>
+            <td>A list of &lt;exclude&gt; elements specifying the tests (by
+pattern) that should be excluded in testing. When not specified and
+when the <tt>test</tt> parameter is not specified, the default
+excludes will be <tt><br />
+&lt;excludes&gt;<br />
+&#xa0;&lt;exclude&gt;**/*$*&lt;/exclude&gt;<br />
+&lt;/excludes&gt;<br />
+</tt> (which excludes all inner classes).<br />
+This parameter is ignored if the TestNG <tt>suiteXmlFiles</tt>
+parameter is specified.<br /></td>
+          </tr>
+          <tr class="b">
+            <td><b><a href="#fork">fork</a></b></td>
+            <td><tt>boolean</tt></td>
+            <td><tt>-</tt></td>
+            <td>Option to specify the forking behavior. True to fork, false to run
+in process.<br /></td>
+          </tr>
+          <tr class="a">
+            <td><b><a href="#quiet">quiet</a></b></td>
+            <td><tt>boolean</tt></td>
+            <td><tt>-</tt></td>
+            <td>If true, the stdout/stderr from tests will not be copied to the
+console. (Note that they are always in the test result XML file,
+regardless of the value of this option.)<br /><b>Default value is</b>: <tt>true</tt>.</td>
+          </tr>
+          <tr class="b">
+            <td><b><a href="#reportsDirectory">reportsDirectory</a></b></td>
+            <td><tt>File</tt></td>
+            <td><tt>-</tt></td>
+            <td>Base directory where all reports are written to.<br /></td>
+          </tr>
+          <tr class="a">
+            <td><b><a href="#skipTests">skipTests</a></b></td>
+            <td><tt>boolean</tt></td>
+            <td><tt>-</tt></td>
+            <td>Set this to 'true' to skip running tests, but still compile them.
+Its use is NOT RECOMMENDED, but quite convenient on occasion.<br /></td>
+          </tr>
+          <tr class="b">
+            <td><b><a href="#systemProperties">systemProperties</a></b></td>
+            <td><tt>Properties</tt></td>
+            <td><tt>-</tt></td>
+            <td>List of System properties to pass to the JUnit tests.<br /></td>
+          </tr>
+          <tr class="a">
+            <td><b><a href="#test">test</a></b></td>
+            <td><tt>String</tt></td>
+            <td><tt>-</tt></td>
+            <td>Specify this parameter to run individual tests by file name,
+overriding the <tt>includes/excludes</tt> parameters. Each
+pattern you specify here will be used to create an include pattern
+formatted like <tt>**/${test}.java</tt>, so you can just type
+&quot;-Dtest=MyTest&quot; to run a single test called &quot;foo/MyTest.java&quot;. This
+parameter will override the TestNG suiteXmlFiles parameter. since
+1.7 you can now use &quot;-Dtest=MyTest#method&quot; to execute only one
+method of the unit tests. Note * is supported too
+&quot;-Dtest=MyTest#method*&quot; to execute only method starting with method<br /></td>
+          </tr>
+          <tr class="b">
+            <td><b><a href="#testFailureIgnore">testFailureIgnore</a></b></td>
+            <td><tt>boolean</tt></td>
+            <td><tt>-</tt></td>
+            <td>Set this to true to ignore a failure during testing. Its use is NOT
+RECOMMENDED, but quite convenient on occasion.<br /></td>
+          </tr>
+          <tr class="a">
+            <td><b><a href="#timeout">timeout</a></b></td>
+            <td><tt>int</tt></td>
+            <td><tt>-</tt></td>
+            <td>Abort the test if it doesn't complete in the given number of
+seconds. 0 means no timeout.<br /></td>
+          </tr>
+        </table>
+      </div>
+      <div class="section"><h3>Parameter Details<a name="Parameter_Details"></a></h3>
+        <p><b><a name="argLine">argLine</a>:</b></p>
+        <div>Arbitrary JVM options to set on the command line. Used when
+forking.</div>
+        <ul>
+          <li><b>Type</b>: <tt>java.lang.String</tt></li>
+          <li><b>Required</b>: <tt>No</tt></li>
+          <li><b>Expression</b>: <tt>${argLine}</tt></li>
+        </ul><hr /><p><b><a name="concurrency">concurrency</a>:</b></p>
+        <div>Number of concurrent executions. Specify -N means &quot;N times
+#ofProcessors&quot;</div>
+        <ul>
+          <li><b>Type</b>: <tt>int</tt></li>
+          <li><b>Required</b>: <tt>No</tt></li>
+          <li><b>Expression</b>: <tt>${maven.junit.concurrency}</tt></li>
+        </ul><hr /><p><b><a name="debugForkedProcess">debugForkedProcess</a>:</b></p>
+        <div>Attach a debugger to the forked JVM. If set to &quot;true&quot;, the process
+will suspend and wait for a debugger to attach on port 5005. If set
+to some other string, that string will be appended to the argLine,
+allowing you to configure arbitrary debuggability options (without
+overwriting the other options specified in the argLine).</div>
+        <ul>
+          <li><b>Type</b>: <tt>java.lang.String</tt></li>
+          <li><b>Required</b>: <tt>No</tt></li>
+          <li><b>Expression</b>: <tt>${maven.surefire.debug}</tt></li>
+        </ul><hr /><p><b><a name="excludes">excludes</a>:</b></p>
+        <div>A list of &lt;exclude&gt; elements specifying the tests (by
+pattern) that should be excluded in testing. When not specified and
+when the <tt>test</tt> parameter is not specified, the default
+excludes will be <tt><br />
+&lt;excludes&gt;<br />
+&#xa0;&lt;exclude&gt;**/*$*&lt;/exclude&gt;<br />
+&lt;/excludes&gt;<br />
+</tt> (which excludes all inner classes).<br />
+This parameter is ignored if the TestNG <tt>suiteXmlFiles</tt>
+parameter is specified.</div>
+        <ul>
+          <li><b>Type</b>: <tt>java.util.List</tt></li>
+          <li><b>Required</b>: <tt>No</tt></li>
+        </ul><hr /><p><b><a name="fork">fork</a>:</b></p>
+        <div>Option to specify the forking behavior. True to fork, false to run
+in process.</div>
+        <ul>
+          <li><b>Type</b>: <tt>boolean</tt></li>
+          <li><b>Required</b>: <tt>No</tt></li>
+          <li><b>Expression</b>: <tt>${maven.junit.fork}</tt></li>
+        </ul><hr /><p><b><a name="project">project</a>:</b></p>
+        <div>(no description)</div>
+        <ul>
+          <li><b>Type</b>: <tt>org.apache.maven.project.MavenProject</tt></li>
+          <li><b>Required</b>: <tt>Yes</tt></li>
+          <li><b>Expression</b>: <tt>${project}</tt></li>
+        </ul><hr /><p><b><a name="quiet">quiet</a>:</b></p>
+        <div>If true, the stdout/stderr from tests will not be copied to the
+console. (Note that they are always in the test result XML file,
+regardless of the value of this option.)</div>
+        <ul>
+          <li><b>Type</b>: <tt>boolean</tt></li>
+          <li><b>Required</b>: <tt>No</tt></li>
+          <li><b>Expression</b>: <tt>${maven.junit.quiet}</tt></li>
+          <li><b>Default</b>: <tt>true</tt></li>
+        </ul><hr /><p><b><a name="reportsDirectory">reportsDirectory</a>:</b></p>
+        <div>Base directory where all reports are written to.</div>
+        <ul>
+          <li><b>Type</b>: <tt>java.io.File</tt></li>
+          <li><b>Required</b>: <tt>No</tt></li>
+          <li><b>Expression</b>: <tt>${project.build.directory}/surefire-reports</tt></li>
+        </ul><hr /><p><b><a name="skipTests">skipTests</a>:</b></p>
+        <div>Set this to 'true' to skip running tests, but still compile them.
+Its use is NOT RECOMMENDED, but quite convenient on occasion.</div>
+        <ul>
+          <li><b>Type</b>: <tt>boolean</tt></li>
+          <li><b>Required</b>: <tt>No</tt></li>
+          <li><b>Expression</b>: <tt>${skipTests}</tt></li>
+        </ul><hr /><p><b><a name="systemProperties">systemProperties</a>:</b></p>
+        <div>List of System properties to pass to the JUnit tests.</div>
+        <ul>
+          <li><b>Type</b>: <tt>java.util.Properties</tt></li>
+          <li><b>Required</b>: <tt>No</tt></li>
+        </ul><hr /><p><b><a name="test">test</a>:</b></p>
+        <div>Specify this parameter to run individual tests by file name,
+overriding the <tt>includes/excludes</tt> parameters. Each
+pattern you specify here will be used to create an include pattern
+formatted like <tt>**/${test}.java</tt>, so you can just type
+&quot;-Dtest=MyTest&quot; to run a single test called &quot;foo/MyTest.java&quot;. This
+parameter will override the TestNG suiteXmlFiles parameter. since
+1.7 you can now use &quot;-Dtest=MyTest#method&quot; to execute only one
+method of the unit tests. Note * is supported too
+&quot;-Dtest=MyTest#method*&quot; to execute only method starting with method</div>
+        <ul>
+          <li><b>Type</b>: <tt>java.lang.String</tt></li>
+          <li><b>Required</b>: <tt>No</tt></li>
+          <li><b>Expression</b>: <tt>${test}</tt></li>
+        </ul><hr /><p><b><a name="testFailureIgnore">testFailureIgnore</a>:</b></p>
+        <div>Set this to true to ignore a failure during testing. Its use is NOT
+RECOMMENDED, but quite convenient on occasion.</div>
+        <ul>
+          <li><b>Type</b>: <tt>boolean</tt></li>
+          <li><b>Required</b>: <tt>No</tt></li>
+          <li><b>Expression</b>: <tt>${maven.test.failure.ignore}</tt></li>
+        </ul><hr /><p><b><a name="timeout">timeout</a>:</b></p>
+        <div>Abort the test if it doesn't complete in the given number of
+seconds. 0 means no timeout.</div>
+        <ul>
+          <li><b>Type</b>: <tt>int</tt></li>
+          <li><b>Required</b>: <tt>No</tt></li>
+          <li><b>Expression</b>: <tt>${maven.junit.timeout}</tt></li>
+        </ul>
+      </div>
+    </div>
+  
+
+      </div>
+    </div>
+    <div id="footer">
+      <div class="xright">&#169;  
+          2013
+    
+          
+  
+
+  
+  
+  &nbsp;| Last Published: 01/03/2013
+  &nbsp;| Version: 1.11
+</div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    </div></div>
+  </body>
+</html>
