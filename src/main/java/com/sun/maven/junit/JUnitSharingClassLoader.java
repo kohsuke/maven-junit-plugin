@@ -14,7 +14,7 @@ final class JUnitSharingClassLoader extends ClassLoader {
 
     @Override
     protected synchronized Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        if (name.startsWith("junit.") || name.startsWith("org.junit"))
+        if (name.startsWith("junit.") || name.startsWith("org.junit") || name.startsWith("org.hamcrest."))
             return junitLoader.loadClass(name);
         return super.loadClass(name, resolve);
     }
